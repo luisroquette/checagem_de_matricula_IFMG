@@ -5,26 +5,271 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Checagem de matrícula IFMG</title>
     <meta name="description" content="Comprovante de Matrícula confirmado!">
+    <link rel="icon" href="assets/logo-ifmg.png" type="image/png">
     <style>
+      :root {
+        color-scheme: light;
+        --ifmg-green: #2e9e43;
+        --ifmg-green-dark: #19712d;
+        --ink: #101710;
+        --muted: #5f6c61;
+        --line: #dce8de;
+        --surface: #ffffff;
+        --canvas: #f2f7f1;
+      }
+
       * { box-sizing: border-box; }
-      html, body { min-height: 100%; margin: 0; }
+
+      html, body { min-height: 100%; margin: 0; overflow-x: hidden; }
+
       body {
         display: grid;
         place-items: center;
-        padding: 20px;
-        background: #f4f8f3;
-        font-family: Arial, sans-serif;
+        padding: 24px;
+        background:
+          radial-gradient(circle at 50% 0%, #ffffff 0, transparent 42%),
+          var(--canvas);
+        color: var(--ink);
+        font-family: Arial, Helvetica, sans-serif;
       }
-      img {
+
+      .card {
+        width: 100%;
+        max-width: 590px;
+        min-width: 0;
+        min-height: min(760px, calc(100vh - 48px));
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        padding: clamp(28px, 6vw, 54px);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 32px;
+        box-shadow: 0 20px 60px rgb(25 70 35 / 10%);
+      }
+
+      .brand {
         display: block;
-        width: min(100%, 720px);
+        width: min(46vw, 210px);
         height: auto;
-        border-radius: 24px;
-        box-shadow: 0 12px 40px rgb(25 70 35 / 12%);
+        margin: 0 auto;
+      }
+
+      .stage {
+        display: grid;
+        width: 100%;
+        min-width: 0;
+        flex: 1;
+        place-items: center;
+        text-align: center;
+      }
+
+      .loading,
+      .result,
+      .error { grid-area: 1 / 1; }
+
+      .loading {
+        display: grid;
+        width: 100%;
+        min-width: 0;
+        justify-items: center;
+        gap: 24px;
+      }
+
+      .scanner {
+        width: 116px;
+        aspect-ratio: 1;
+        border: 9px solid #deebe0;
+        border-top-color: var(--ifmg-green);
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+
+      .status {
+        margin: 0;
+        font-size: clamp(1.35rem, 5vw, 1.8rem);
+        font-weight: 700;
+        letter-spacing: -0.025em;
+      }
+
+      .progress {
+        width: min(72vw, 280px);
+        height: 6px;
+        overflow: hidden;
+        background: #e7efe8;
+        border-radius: 999px;
+      }
+
+      .progress::after {
+        content: "";
+        display: block;
+        width: 45%;
+        height: 100%;
+        background: var(--ifmg-green);
+        border-radius: inherit;
+        animation: search 1.15s ease-in-out infinite;
+      }
+
+      .result,
+      .error {
+        width: 100%;
+        min-width: 0;
+        visibility: hidden;
+        opacity: 0;
+        transform: translateY(10px) scale(0.98);
+      }
+
+      .result.is-visible,
+      .error.is-visible {
+        visibility: visible;
+        opacity: 1;
+        transform: none;
+        transition: opacity 320ms ease, transform 320ms ease;
+      }
+
+      .loading.is-hidden {
+        visibility: hidden;
+        opacity: 0;
+        transition: opacity 180ms ease;
+      }
+
+      .check {
+        width: 124px;
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+        margin: 0 auto 28px;
+        background: var(--ifmg-green);
+        border-radius: 50%;
+        box-shadow: 0 12px 26px rgb(46 158 67 / 23%);
+      }
+
+      .check svg { width: 70px; height: 70px; }
+
+      h1 {
+        width: 100%;
+        max-width: 440px;
+        margin: 0 auto;
+        font-size: clamp(1.75rem, 7vw, 2.55rem);
+        line-height: 1.08;
+        letter-spacing: -0.04em;
+      }
+
+      .error p { color: var(--muted); }
+
+      button {
+        padding: 12px 20px;
+        border: 0;
+        border-radius: 999px;
+        background: var(--ifmg-green-dark);
+        color: #ffffff;
+        font: inherit;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      button:focus-visible { outline: 3px solid #8ed49b; outline-offset: 3px; }
+
+      .disclaimer {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+        line-height: 1.45;
+        text-align: center;
+        overflow-wrap: anywhere;
+      }
+
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes search { from { transform: translateX(-120%); } to { transform: translateX(270%); } }
+
+      @media (max-width: 520px) {
+        body { padding: 12px; }
+        .card {
+          width: calc(100vw - 24px);
+          min-height: calc(100vh - 24px);
+          border-radius: 24px;
+        }
+        h1 { max-width: 100%; }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
       }
     </style>
   </head>
   <body>
-    <img src="confirmacao.png" alt="Comprovante de Matrícula confirmado!">
+    <main class="card">
+      <img class="brand" src="assets/logo-ifmg.png" width="323" height="390" alt="Instituto Federal Minas Gerais">
+
+      <section class="stage" aria-live="polite">
+        <div class="loading" id="loading">
+          <div class="scanner" aria-hidden="true"></div>
+          <p class="status" id="status">Carregando...</p>
+          <div class="progress" aria-hidden="true"></div>
+        </div>
+
+        <div class="result" id="result">
+          <div class="check" aria-hidden="true">
+            <svg viewBox="0 0 64 64" role="img">
+              <path d="M13 33l12 12 27-29" fill="none" stroke="#fff" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <h1 id="message">Comprovante de Matrícula confirmado!</h1>
+        </div>
+
+        <div class="error" id="error">
+          <h1>Não foi possível concluir a checagem.</h1>
+          <p>Verifique sua conexão e tente novamente.</p>
+          <button type="button" id="retry">Tentar novamente</button>
+        </div>
+      </section>
+
+      <p class="disclaimer">Confirmação independente do arquivo publicado pelo titular. Não substitui consulta ao SUAP ou validação oficial do IFMG.</p>
+    </main>
+
+    <script>
+      const loading = document.querySelector("#loading");
+      const result = document.querySelector("#result");
+      const error = document.querySelector("#error");
+      const status = document.querySelector("#status");
+      const message = document.querySelector("#message");
+      const retry = document.querySelector("#retry");
+      const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+      const wait = (milliseconds) => new Promise((resolve) => setTimeout(resolve, milliseconds));
+
+      async function verify() {
+        loading.classList.remove("is-hidden");
+        result.classList.remove("is-visible");
+        error.classList.remove("is-visible");
+        status.textContent = "Carregando...";
+
+        try {
+          if (!reducedMotion) await wait(700);
+          status.textContent = "Buscando a matrícula...";
+          const [response] = await Promise.all([
+            fetch("registro.json", { cache: "no-store" }),
+            reducedMotion ? Promise.resolve() : wait(1500),
+          ]);
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+          const record = await response.json();
+          if (record.status !== "confirmado") throw new Error("status inválido");
+          message.textContent = record.mensagem;
+          loading.classList.add("is-hidden");
+          result.classList.add("is-visible");
+        } catch {
+          loading.classList.add("is-hidden");
+          error.classList.add("is-visible");
+        }
+      }
+
+      retry.addEventListener("click", verify);
+      verify();
+    </script>
   </body>
 </html>
